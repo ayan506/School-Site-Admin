@@ -112,8 +112,8 @@
   --chart-4: 45 80% 55%;
   --chart-5: 280 50% 50%;
 
-  --app-font-sans: 'Inter', 'Noto Sans Devanagari', sans-serif;
-  --app-font-serif: 'Georgia', 'Noto Serif Devanagari', serif;
+  --app-font-sans: 'Poppins', 'Noto Sans Devanagari', sans-serif;
+  --app-font-serif: 'Playfair Display', 'Noto Sans Devanagari', serif;
   --app-font-mono: Menlo, monospace;
   --radius: .5rem;
 

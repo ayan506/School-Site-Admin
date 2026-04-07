@@ -118,49 +118,57 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
 function AudioPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [needsInteraction, setNeedsInteraction] = useState(true);
+  const startedRef = useRef(false);
+
+  const startPlaying = () => {
+    if (startedRef.current || !audioRef.current) return;
+    audioRef.current.volume = 1;
+    audioRef.current.play().then(() => {
+      setIsPlaying(true);
+      startedRef.current = true;
+    }).catch(() => {});
+  };
 
   useEffect(() => {
-    // Attempt auto-play
-    const playAudio = async () => {
-      try {
-        if (audioRef.current) {
-          await audioRef.current.play();
-          setIsPlaying(true);
-          setNeedsInteraction(false);
-        }
-      } catch (err) {
-        console.log("Autoplay blocked by browser");
-        setNeedsInteraction(true);
-      }
-    };
-    playAudio();
+    // Try immediate autoplay
+    if (audioRef.current) {
+      audioRef.current.volume = 1;
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+        startedRef.current = true;
+      }).catch(() => {
+        // Browser blocked autoplay — start on first interaction
+        const events = ["click", "touchstart", "keydown", "scroll"];
+        const handler = () => {
+          startPlaying();
+          events.forEach(e => document.removeEventListener(e, handler));
+        };
+        events.forEach(e => document.addEventListener(e, handler, { once: true, passive: true }));
+      });
+    }
   }, []);
 
   const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current.play();
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.volume = 1;
+      audioRef.current.play().then(() => {
         setIsPlaying(true);
-        setNeedsInteraction(false);
-      }
+        startedRef.current = true;
+      }).catch(() => {});
     }
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
-      {needsInteraction && (
-        <div className="bg-white px-3 py-1.5 rounded-full shadow-lg border text-xs font-medium text-primary animate-pulse">
-          Click to play music
-        </div>
-      )}
+    <div className="fixed bottom-6 right-6 z-50">
       <Button 
         onClick={togglePlay}
         variant="default"
         size="icon"
+        title={isPlaying ? "Stop music" : "Play music"}
         className="rounded-full w-12 h-12 shadow-xl bg-primary hover:bg-primary/90 text-white"
       >
         {isPlaying ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
