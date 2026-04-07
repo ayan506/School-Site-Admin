@@ -1,47 +1,64 @@
-import { useState } from "react";
-import { useAdminLogin, useGetAdminMe } from "@workspace/api-client-react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Lock, User, Eye, EyeOff } from "lucide-react";
 
 export default function AdminLogin() {
   const [, navigate] = useLocation();
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
 
-  const { data: session } = useGetAdminMe({ query: { retry: false } });
-  const loginMutation = useAdminLogin();
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.isAdmin) navigate("/admin/dashboard");
+      })
+      .catch(() => {})
+      .finally(() => setChecking(false));
+  }, []);
 
-  if (session?.isAdmin) {
-    navigate("/admin/dashboard");
-    return null;
+  if (checking) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    loginMutation.mutate(
-      { username, password },
-      {
-        onSuccess: (data) => {
-          if (data.success) {
-            navigate("/admin/dashboard");
-          } else {
-            setError("Invalid credentials. Please try again.");
-          }
-        },
-        onError: () => {
-          setError("Invalid credentials. Please try again.");
-        },
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        window.location.href = "/admin/dashboard";
+      } else {
+        setError("Invalid credentials. Please try again. / गलत जानकारी।");
       }
-    );
+    } catch {
+      setError("Connection error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-gradient-to-br from-secondary/5 to-primary/5 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/5 to-primary/5 px-4">
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -49,7 +66,6 @@ export default function AdminLogin() {
         className="w-full max-w-md"
       >
         <div className="bg-card border rounded-2xl shadow-lg overflow-hidden">
-          {/* Header */}
           <div className="bg-gradient-to-br from-secondary to-secondary/80 text-white p-8 text-center">
             <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Lock className="w-8 h-8 text-white" />
@@ -59,7 +75,6 @@ export default function AdminLogin() {
             <p className="text-white/50 text-xs mt-1">MNI Higher Secondary School, Sambhal</p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="p-8 space-y-5">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -72,11 +87,13 @@ export default function AdminLogin() {
                   value={username}
                   onChange={e => setUsername(e.target.value)}
                   required
+                  autoComplete="username"
                   className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                   placeholder="admin"
                 />
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
                 Password / पासवर्ड
@@ -88,6 +105,7 @@ export default function AdminLogin() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                   className="w-full pl-10 pr-10 py-2.5 border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                   placeholder="••••••••"
                 />
@@ -111,14 +129,14 @@ export default function AdminLogin() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              disabled={loginMutation.isPending}
+              disabled={loading}
               className="w-full bg-primary text-white py-3 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loginMutation.isPending ? "Signing in..." : "Login / लॉगिन"}
+              {loading ? "Signing in... / लॉगिन हो रहा है..." : "Login / लॉगिन"}
             </motion.button>
 
             <p className="text-xs text-center text-muted-foreground mt-2">
-              Default: username <code className="bg-muted px-1 rounded">admin</code> / password <code className="bg-muted px-1 rounded">mni@school2024</code>
+              Username: <code className="bg-muted px-1 rounded">admin</code> &nbsp;|&nbsp; Password: <code className="bg-muted px-1 rounded">mni@school2024</code>
             </p>
           </form>
         </div>

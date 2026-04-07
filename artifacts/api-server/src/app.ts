@@ -32,6 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const sessionSecret = process.env.SESSION_SECRET ?? "mni-school-secret-key-2024";
 
+app.set("trust proxy", 1);
 app.use(
   session({
     secret: sessionSecret,
@@ -40,6 +41,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: false,
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     },
   }),

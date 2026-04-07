@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useGetAdminMe, useAdminLogout, useListBlogPosts, useCreateBlogPost, useUpdateBlogPost, useDeleteBlogPost, useListGalleryPhotos, useCreateGalleryPhoto, useUpdateGalleryPhoto, useDeleteGalleryPhoto, useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, getListBlogPostsQueryKey, getListGalleryPhotosQueryKey, getListStaffQueryKey } from "@workspace/api-client-react";
+import { useState, useEffect } from "react";
+import { useListBlogPosts, useCreateBlogPost, useUpdateBlogPost, useDeleteBlogPost, useListGalleryPhotos, useCreateGalleryPhoto, useUpdateGalleryPhoto, useDeleteGalleryPhoto, useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, getListBlogPostsQueryKey, getListGalleryPhotosQueryKey, getListStaffQueryKey } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,21 +10,34 @@ type Tab = "blog" | "gallery" | "staff";
 export default function AdminDashboard() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>("blog");
+  const [session, setSession] = useState<{ isAdmin: boolean; username: string } | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
 
-  const { data: session, isLoading: sessionLoading } = useGetAdminMe({ query: { retry: false } });
-  const logoutMutation = useAdminLogout();
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.isAdmin) {
+          setSession(data);
+        } else {
+          window.location.href = "/admin";
+        }
+      })
+      .catch(() => { window.location.href = "/admin"; })
+      .finally(() => setSessionLoading(false));
+  }, []);
 
   if (sessionLoading) {
     return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   }
 
   if (!session?.isAdmin) {
-    navigate("/admin");
     return null;
   }
 
-  const handleLogout = () => {
-    logoutMutation.mutate(undefined, { onSuccess: () => navigate("/admin") });
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    window.location.href = "/admin";
   };
 
   const tabs = [
