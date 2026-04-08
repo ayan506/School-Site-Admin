@@ -1,10 +1,31 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Award, Target, Heart } from "lucide-react";
+import { BookOpen, Award, Target, Heart, Quote, UserCircle2 } from "lucide-react";
+
+interface Settings {
+  founder_name?: string;
+  founder_photo?: string;
+  founder_bio?: string;
+  about_mission?: string;
+  about_mission_hindi?: string;
+  about_vision?: string;
+  about_vision_hindi?: string;
+}
 
 export default function About() {
+  const [settings, setSettings] = useState<Settings>({});
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(setSettings)
+      .catch(() => {});
+  }, []);
+
+  const founderBioParagraphs = (settings.founder_bio || "").split("\n\n").filter(Boolean);
+
   return (
     <div>
-      {/* Page Header */}
       <section className="bg-gradient-to-br from-secondary to-secondary/80 text-white py-20">
         <div className="container mx-auto px-4 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -19,7 +40,7 @@ export default function About() {
 
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 max-w-5xl">
-          {/* Introduction */}
+          {/* Story */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -35,7 +56,8 @@ export default function About() {
                 यह विद्यालय दशकों से क्षेत्र के बच्चों को गुणवत्तापूर्ण शिक्षा प्रदान कर रहा है।
               </p>
               <p className="text-foreground/80 leading-relaxed mb-4">
-                MNI Higher Secondary School, Sambhal is a distinguished educational institution in the Sambhal district of Uttar Pradesh, dedicated to providing quality education and holistic development to students from the region.
+                MNI Higher Secondary School, Sambhal is a distinguished educational institution in the Sambhal district of Uttar Pradesh,
+                dedicated to providing quality education and holistic development to students from the region.
               </p>
               <p className="text-foreground/80 leading-relaxed">
                 हमारा लक्ष्य प्रत्येक छात्र को शैक्षणिक उत्कृष्टता के साथ-साथ नैतिक मूल्यों और सामाजिक जिम्मेदारी की शिक्षा देना है।
@@ -59,15 +81,15 @@ export default function About() {
                 icon: Target,
                 title: "हमारा लक्ष्य",
                 subtitle: "Our Mission",
-                content: "प्रत्येक छात्र को उच्च गुणवत्ता की शिक्षा और सर्वांगीण विकास का अवसर प्रदान करना।",
-                contentEn: "To provide every student with high-quality education and opportunities for holistic development.",
+                content: settings.about_mission_hindi || "प्रत्येक छात्र को उच्च गुणवत्ता की शिक्षा और सर्वांगीण विकास का अवसर प्रदान करना।",
+                contentEn: settings.about_mission || "To provide every student with high-quality education and opportunities for holistic development.",
               },
               {
                 icon: Award,
                 title: "हमारी दृष्टि",
                 subtitle: "Our Vision",
-                content: "एक ऐसे समाज का निर्माण जहाँ हर बच्चा शिक्षित, जागरूक और सशक्त हो।",
-                contentEn: "To build a society where every child is educated, aware, and empowered.",
+                content: settings.about_vision_hindi || "एक ऐसे समाज का निर्माण जहाँ हर बच्चा शिक्षित, जागरूक और सशक्त हो।",
+                contentEn: settings.about_vision || "To build a society where every child is educated, aware, and empowered.",
               },
               {
                 icon: Heart,
@@ -96,6 +118,82 @@ export default function About() {
             ))}
           </div>
 
+          {/* Founder Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="mb-16"
+          >
+            <div className="text-center mb-10">
+              <h2 className="font-serif text-3xl font-bold text-secondary mb-2">संस्थापक परिचय</h2>
+              <p className="text-muted-foreground">About the Founder</p>
+              <div className="w-16 h-1 bg-primary rounded mx-auto mt-4" />
+            </div>
+
+            <div className="bg-gradient-to-br from-secondary/5 to-primary/5 border border-secondary/15 rounded-2xl p-8 md:p-12">
+              <div className="flex flex-col md:flex-row gap-8 items-start">
+                <div className="flex-shrink-0 mx-auto md:mx-0">
+                  <div className="w-40 h-48 rounded-2xl overflow-hidden border-4 border-primary/25 shadow-lg bg-muted flex items-center justify-center">
+                    {settings.founder_photo ? (
+                      <img
+                        src={settings.founder_photo}
+                        alt={settings.founder_name || "Founder"}
+                        className="w-full h-full object-cover"
+                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <UserCircle2 className="w-20 h-20 text-muted-foreground/30" />
+                    )}
+                  </div>
+                  <div className="text-center mt-3">
+                    <p className="font-serif font-bold text-secondary text-sm">
+                      {settings.founder_name || "Late Mr. Zaheer Ahmad Hashmi"}
+                    </p>
+                    <p className="text-xs text-primary font-medium mt-0.5">Founder</p>
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <div className="flex items-start gap-2 mb-4">
+                    <Quote className="w-8 h-8 text-primary/30 flex-shrink-0 mt-1" />
+                    <h3 className="font-serif text-2xl font-bold text-secondary">
+                      About the Founder: {settings.founder_name || "Late Mr. Zaheer Ahmad Hashmi"}
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {founderBioParagraphs.length > 0 ? (
+                      founderBioParagraphs.map((para, i) => {
+                        if (para.startsWith('"') || para.startsWith('\u201c')) {
+                          return (
+                            <blockquote key={i} className="border-l-4 border-primary pl-4 py-2 bg-primary/5 rounded-r-lg">
+                              <p className="text-foreground/90 font-medium italic text-sm leading-relaxed">{para}</p>
+                            </blockquote>
+                          );
+                        }
+                        const colonIdx = para.indexOf(":");
+                        if (colonIdx > 0 && colonIdx < 50) {
+                          const heading = para.substring(0, colonIdx);
+                          const rest = para.substring(colonIdx + 1).trim();
+                          return (
+                            <div key={i}>
+                              <h4 className="font-semibold text-secondary mb-1">{heading}:</h4>
+                              <p className="text-foreground/80 text-sm leading-relaxed">{rest}</p>
+                            </div>
+                          );
+                        }
+                        return <p key={i} className="text-foreground/80 text-sm leading-relaxed">{para}</p>;
+                      })
+                    ) : (
+                      <p className="text-muted-foreground text-sm">Founder information will appear here once added by the admin.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Facilities */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -114,7 +212,7 @@ export default function About() {
                 { label: "स्मार्ट क्लासरूम", en: "Smart Classrooms" },
                 { label: "छात्रावास", en: "Hostel" },
                 { label: "स्वास्थ्य कक्ष", en: "Health Room" },
-              ].map((facility) => (
+              ].map(facility => (
                 <div key={facility.label} className="bg-accent/40 border border-accent rounded-lg p-4 text-center">
                   <div className="font-medium text-accent-foreground text-sm">{facility.label}</div>
                   <div className="text-xs text-muted-foreground mt-1">{facility.en}</div>
