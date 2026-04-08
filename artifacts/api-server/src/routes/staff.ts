@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, asc } from "drizzle-orm";
 import { db, staffTable } from "@workspace/db";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 const router: IRouter = Router();
 
