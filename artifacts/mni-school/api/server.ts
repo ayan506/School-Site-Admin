@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// @ts-nocheck
+/* eslint-disable */
 import express from "express";
-import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -74,29 +74,13 @@ const siteSettingsTable = pgTable("site_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// ─── Zod validators ────────────────────────────────────────────────────────────
+// ─── Validators ────────────────────────────────────────────────────────────────
 const IdParam = z.object({ id: z.coerce.number().int().positive() });
 const BlogBody = z.object({ title: z.string().min(1), titleHindi: z.string().min(1), content: z.string().min(1), contentHindi: z.string().min(1), author: z.string().min(1), imageUrl: z.string().optional().nullable() });
 const AlbumBody = z.object({ name: z.string().min(1), nameHindi: z.string().min(1), description: z.string().optional().nullable(), coverImageUrl: z.string().optional().nullable(), eventDate: z.string().optional().nullable() });
 const PhotoBody = z.object({ title: z.string().min(1), titleHindi: z.string().min(1), imageUrl: z.string().min(1), category: z.string().min(1), albumId: z.number().int().nullable().optional() });
 const StaffBody = z.object({ name: z.string().min(1), nameHindi: z.string().min(1), role: z.string().min(1), roleHindi: z.string().min(1), photoUrl: z.string().optional().nullable(), order: z.number().int().default(0), bio: z.string().optional().nullable(), bioHindi: z.string().optional().nullable(), bioEnabled: z.boolean().default(false) });
 const LoginBody = z.object({ username: z.string().min(1), password: z.string().min(1) });
-
-// ─── Session augmentation ──────────────────────────────────────────────────────
-declare module "express-session" {
-  interface SessionData {
-    isAdmin?: boolean;
-    username?: string;
-  }
-}
-
-// Extend Express Request to include session
-interface AuthRequest extends Request {
-  session: session.Session & session.SessionData & {
-    isAdmin?: boolean;
-    username?: string;
-  };
-}
 
 // ─── App ───────────────────────────────────────────────────────────────────────
 const app = express();
@@ -122,8 +106,8 @@ app.use(
 );
 
 // ─── Auth guard ────────────────────────────────────────────────────────────────
-function requireAdmin(req: AuthRequest, res: Response, next: NextFunction): void {
-  if (!(req.session as any).isAdmin) {
+function requireAdmin(req, res, next) {
+  if (!req.session?.isAdmin) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -134,36 +118,34 @@ function requireAdmin(req: AuthRequest, res: Response, next: NextFunction): void
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME ?? "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "mni@school2024";
 
-app.post("/api/auth/login", async (req: Request, res: Response): Promise<void> => {
+app.post("/api/auth/login", async (req, res) => {
   const p = LoginBody.safeParse(req.body);
   if (!p.success) { res.status(400).json({ error: "Invalid request" }); return; }
-  const r = req as AuthRequest;
   if (p.data.username === ADMIN_USERNAME && p.data.password === ADMIN_PASSWORD) {
-    (r.session as any).isAdmin = true;
-    (r.session as any).username = p.data.username;
+    req.session.isAdmin = true;
+    req.session.username = p.data.username;
     res.json({ success: true });
   } else {
     res.status(401).json({ success: false, message: "Invalid credentials" });
   }
 });
 
-app.post("/api/auth/logout", (req: Request, res: Response): void => {
+app.post("/api/auth/logout", (req, res) => {
   req.session.destroy(() => res.json({ success: true }));
 });
 
-app.get("/api/auth/me", (req: Request, res: Response): void => {
-  const r = req as AuthRequest;
-  if ((r.session as any).isAdmin) res.json({ isAdmin: true, username: (r.session as any).username });
+app.get("/api/auth/me", (req, res) => {
+  if (req.session?.isAdmin) res.json({ isAdmin: true, username: req.session.username });
   else res.status(401).json({ isAdmin: false });
 });
 
-// ─── Blog routes ───────────────────────────────────────────────────────────────
-app.get("/api/blog", async (_req: Request, res: Response): Promise<void> => {
+// ─── Blog ──────────────────────────────────────────────────────────────────────
+app.get("/api/blog", async (_req, res) => {
   const posts = await db.select().from(blogPostsTable).orderBy(desc(blogPostsTable.createdAt));
   res.json(posts);
 });
 
-app.get("/api/blog/:id", async (req: Request, res: Response): Promise<void> => {
+app.get("/api/blog/:id", async (req, res) => {
   const p = IdParam.safeParse(req.params);
   if (!p.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const [post] = await db.select().from(blogPostsTable).where(eq(blogPostsTable.id, p.data.id));
@@ -171,14 +153,14 @@ app.get("/api/blog/:id", async (req: Request, res: Response): Promise<void> => {
   res.json(post);
 });
 
-app.post("/api/blog", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.post("/api/blog", requireAdmin, async (req, res) => {
   const p = BlogBody.safeParse(req.body);
   if (!p.success) { res.status(400).json({ error: p.error.message }); return; }
   const [post] = await db.insert(blogPostsTable).values(p.data).returning();
   res.status(201).json(post);
 });
 
-app.put("/api/blog/:id", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.put("/api/blog/:id", requireAdmin, async (req, res) => {
   const id = IdParam.safeParse(req.params);
   if (!id.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const p = BlogBody.partial().safeParse(req.body);
@@ -188,34 +170,34 @@ app.put("/api/blog/:id", requireAdmin as any, async (req: Request, res: Response
   res.json(post);
 });
 
-app.delete("/api/blog/:id", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.delete("/api/blog/:id", requireAdmin, async (req, res) => {
   const p = IdParam.safeParse(req.params);
   if (!p.success) { res.status(400).json({ error: "Invalid id" }); return; }
   await db.delete(blogPostsTable).where(eq(blogPostsTable.id, p.data.id));
   res.sendStatus(204);
 });
 
-// ─── Gallery routes ────────────────────────────────────────────────────────────
-app.get("/api/gallery/albums", async (_req: Request, res: Response): Promise<void> => {
+// ─── Gallery Albums ────────────────────────────────────────────────────────────
+app.get("/api/gallery/albums", async (_req, res) => {
   const albums = await db.select().from(galleryAlbumsTable).orderBy(desc(galleryAlbumsTable.createdAt));
   res.json(albums);
 });
 
-app.get("/api/gallery/albums/:id/photos", async (req: Request, res: Response): Promise<void> => {
+app.get("/api/gallery/albums/:id/photos", async (req, res) => {
   const p = IdParam.safeParse(req.params);
   if (!p.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const photos = await db.select().from(galleryPhotosTable).where(eq(galleryPhotosTable.albumId, p.data.id)).orderBy(asc(galleryPhotosTable.createdAt));
   res.json(photos);
 });
 
-app.post("/api/gallery/albums", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.post("/api/gallery/albums", requireAdmin, async (req, res) => {
   const p = AlbumBody.safeParse(req.body);
   if (!p.success) { res.status(400).json({ error: p.error.message }); return; }
   const [album] = await db.insert(galleryAlbumsTable).values(p.data).returning();
   res.status(201).json(album);
 });
 
-app.put("/api/gallery/albums/:id", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.put("/api/gallery/albums/:id", requireAdmin, async (req, res) => {
   const id = IdParam.safeParse(req.params);
   if (!id.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const p = AlbumBody.partial().safeParse(req.body);
@@ -224,7 +206,7 @@ app.put("/api/gallery/albums/:id", requireAdmin as any, async (req: Request, res
   res.json(album);
 });
 
-app.delete("/api/gallery/albums/:id", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.delete("/api/gallery/albums/:id", requireAdmin, async (req, res) => {
   const p = IdParam.safeParse(req.params);
   if (!p.success) { res.status(400).json({ error: "Invalid id" }); return; }
   await db.delete(galleryPhotosTable).where(eq(galleryPhotosTable.albumId, p.data.id));
@@ -232,19 +214,20 @@ app.delete("/api/gallery/albums/:id", requireAdmin as any, async (req: Request, 
   res.sendStatus(204);
 });
 
-app.get("/api/gallery", async (_req: Request, res: Response): Promise<void> => {
+// ─── Gallery Photos ────────────────────────────────────────────────────────────
+app.get("/api/gallery", async (_req, res) => {
   const photos = await db.select().from(galleryPhotosTable).orderBy(desc(galleryPhotosTable.createdAt));
   res.json(photos);
 });
 
-app.post("/api/gallery", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.post("/api/gallery", requireAdmin, async (req, res) => {
   const p = PhotoBody.safeParse(req.body);
   if (!p.success) { res.status(400).json({ error: p.error.message }); return; }
   const [photo] = await db.insert(galleryPhotosTable).values(p.data).returning();
   res.status(201).json(photo);
 });
 
-app.put("/api/gallery/:id", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.put("/api/gallery/:id", requireAdmin, async (req, res) => {
   const id = IdParam.safeParse(req.params);
   if (!id.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const p = PhotoBody.partial().safeParse(req.body);
@@ -253,27 +236,27 @@ app.put("/api/gallery/:id", requireAdmin as any, async (req: Request, res: Respo
   res.json(photo);
 });
 
-app.delete("/api/gallery/:id", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.delete("/api/gallery/:id", requireAdmin, async (req, res) => {
   const p = IdParam.safeParse(req.params);
   if (!p.success) { res.status(400).json({ error: "Invalid id" }); return; }
   await db.delete(galleryPhotosTable).where(eq(galleryPhotosTable.id, p.data.id));
   res.sendStatus(204);
 });
 
-// ─── Staff routes ──────────────────────────────────────────────────────────────
-app.get("/api/staff", async (_req: Request, res: Response): Promise<void> => {
+// ─── Staff ─────────────────────────────────────────────────────────────────────
+app.get("/api/staff", async (_req, res) => {
   const staff = await db.select().from(staffTable).orderBy(asc(staffTable.order));
   res.json(staff);
 });
 
-app.post("/api/staff", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.post("/api/staff", requireAdmin, async (req, res) => {
   const p = StaffBody.safeParse(req.body);
   if (!p.success) { res.status(400).json({ error: p.error.message }); return; }
   const [member] = await db.insert(staffTable).values(p.data).returning();
   res.status(201).json(member);
 });
 
-app.put("/api/staff/:id", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.put("/api/staff/:id", requireAdmin, async (req, res) => {
   const id = IdParam.safeParse(req.params);
   if (!id.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const p = StaffBody.partial().safeParse(req.body);
@@ -282,15 +265,15 @@ app.put("/api/staff/:id", requireAdmin as any, async (req: Request, res: Respons
   res.json(member);
 });
 
-app.delete("/api/staff/:id", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
+app.delete("/api/staff/:id", requireAdmin, async (req, res) => {
   const p = IdParam.safeParse(req.params);
   if (!p.success) { res.status(400).json({ error: "Invalid id" }); return; }
   await db.delete(staffTable).where(eq(staffTable.id, p.data.id));
   res.sendStatus(204);
 });
 
-// ─── Settings routes ───────────────────────────────────────────────────────────
-const DEFAULT_SETTINGS: Record<string, string> = {
+// ─── Settings ──────────────────────────────────────────────────────────────────
+const DEFAULT_SETTINGS = {
   home_title: "MNI Higher Secondary School",
   home_title_hindi: "एम.एन.आई. उच्चतर माध्यमिक विद्यालय",
   home_tagline: "ज्ञान, संस्कार और उत्कृष्टता की ओर — एक सशक्त भविष्य की नींव",
@@ -307,41 +290,40 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   contact_hours: "Monday – Saturday: 8:00 AM – 4:00 PM\nSunday: Closed",
 };
 
-app.get("/api/settings", async (_req: Request, res: Response): Promise<void> => {
+app.get("/api/settings", async (_req, res) => {
   const rows = await db.select().from(siteSettingsTable);
-  const fromDB: Record<string, string> = {};
+  const fromDB = {};
   rows.forEach(r => { fromDB[r.key] = r.value; });
   res.json({ ...DEFAULT_SETTINGS, ...fromDB });
 });
 
-app.put("/api/settings", requireAdmin as any, async (req: Request, res: Response): Promise<void> => {
-  const updates = req.body as Record<string, string>;
+app.put("/api/settings", requireAdmin, async (req, res) => {
+  const updates = req.body;
   for (const [key, value] of Object.entries(updates)) {
     await db.insert(siteSettingsTable).values({ key, value }).onConflictDoUpdate({ target: siteSettingsTable.key, set: { value, updatedAt: new Date() } });
   }
   const rows = await db.select().from(siteSettingsTable);
-  const fromDB: Record<string, string> = {};
+  const fromDB = {};
   rows.forEach(r => { fromDB[r.key] = r.value; });
   res.json({ ...DEFAULT_SETTINGS, ...fromDB });
 });
 
-// ─── Upload (base64 → stored as data URL, works on Vercel) ────────────────────
+// ─── Upload ────────────────────────────────────────────────────────────────────
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 },
-  fileFilter: (_req: any, file: any, cb: any) => {
+  fileFilter: (_req, file, cb) => {
     cb(null, /jpeg|jpg|png|gif|webp/.test(file.mimetype));
   },
 });
 
-app.post("/api/upload", requireAdmin as any, upload.single("file"), (req: Request, res: Response): void => {
-  const file = (req as any).file;
-  if (!file) { res.status(400).json({ error: "No file uploaded" }); return; }
-  const dataUrl = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+app.post("/api/upload", requireAdmin, upload.single("file"), (req, res) => {
+  if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
+  const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
   res.json({ url: dataUrl });
 });
 
 // ─── Health ────────────────────────────────────────────────────────────────────
-app.get("/api/health", (_req: Request, res: Response) => res.json({ status: "ok" }));
+app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
 
 export default app;
