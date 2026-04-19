@@ -1,1 +1,3 @@
-export { default } from "../artifacts/mni-school/api/server";
+import app from '../artifacts/mni-school/api/server.js';
+
+export default app;
