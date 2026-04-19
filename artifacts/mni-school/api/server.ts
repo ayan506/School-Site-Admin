@@ -324,6 +324,22 @@ app.post("/api/upload", requireAdmin, upload.single("file"), (req, res) => {
 });
 
 // ─── Health ────────────────────────────────────────────────────────────────────
-app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/api/health", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.json({ status: "ok", db: "connected", env: { hasDbUrl: !!process.env.DATABASE_URL, nodeEnv: process.env.NODE_ENV } });
+  } catch (e) {
+    res.status(503).json({ status: "degraded", db: "disconnected", error: e.message, env: { hasDbUrl: !!process.env.DATABASE_URL } });
+  }
+});
+
+// ─── Global error handler (must be last) ───────────────────────────────────────
+app.use((err, req, res, _next) => {
+  console.error("API Error:", err?.message ?? err);
+  res.status(err?.status ?? 500).json({
+    error: "Internal server error",
+    message: process.env.NODE_ENV === "production" ? "Something went wrong" : (err?.message ?? String(err)),
+  });
+});
 
 export default app;

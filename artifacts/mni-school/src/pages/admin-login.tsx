@@ -43,15 +43,20 @@ export default function AdminLogin() {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try { data = await res.json(); } catch {}
 
       if (res.ok && data.success) {
         window.location.href = "/admin/dashboard";
+      } else if (res.status === 401) {
+        setError("Invalid credentials. / गलत उपयोगकर्ता नाम या पासवर्ड।");
+      } else if (res.status >= 500) {
+        setError(`Server error (${res.status}). Check Vercel environment variables (DATABASE_URL, SESSION_SECRET).`);
       } else {
-        setError("Invalid credentials. Please try again. / गलत जानकारी।");
+        setError(data?.error ?? "Login failed. Please try again.");
       }
-    } catch {
-      setError("Connection error. Please try again.");
+    } catch (err: any) {
+      setError("Cannot reach server. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -135,9 +140,11 @@ export default function AdminLogin() {
               {loading ? "Signing in... / लॉगिन हो रहा है..." : "Login / लॉगिन"}
             </motion.button>
 
-            <p className="text-xs text-center text-muted-foreground mt-2">
-              Username: <code className="bg-muted px-1 rounded">admin</code> &nbsp;|&nbsp; Password: <code className="bg-muted px-1 rounded">mni@school2024</code>
-            </p>
+            {import.meta.env.DEV && (
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                Username: <code className="bg-muted px-1 rounded">admin</code> &nbsp;|&nbsp; Password: <code className="bg-muted px-1 rounded">mni@school2024</code>
+              </p>
+            )}
           </form>
         </div>
       </motion.div>
