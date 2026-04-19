@@ -11,7 +11,12 @@ import multer from "multer";
 
 // ─── DB ────────────────────────────────────────────────────────────────────────
 const { Pool } = pg;
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+
+if (!process.env.DATABASE_URL) {
+  console.error("❌ DATABASE_URL environment variable is not set. Please add it in your Vercel project settings.");
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? "" });
 const db = drizzle(pool);
 
 // ─── Schema ────────────────────────────────────────────────────────────────────
