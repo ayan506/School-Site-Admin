@@ -52,15 +52,32 @@ export default function About() {
               <p className="text-lg font-serif text-muted-foreground mb-2">Our Story</p>
               <div className="w-12 h-1 bg-primary rounded mb-6" />
               <p className="text-foreground/80 leading-relaxed mb-4">
-                एम.एन.आई. उच्चतर माध्यमिक विद्यालय, संभल — उत्तर प्रदेश के संभल जिले में स्थित एक प्रतिष्ठित शिक्षण संस्थान है।
-                यह विद्यालय दशकों से क्षेत्र के बच्चों को गुणवत्तापूर्ण शिक्षा प्रदान कर रहा है।
+            
               </p>
               <p className="text-foreground/80 leading-relaxed mb-4">
-                MNI Higher Secondary School, Sambhal is a distinguished educational institution in the Sambhal district of Uttar Pradesh,
-                dedicated to providing quality education and holistic development to students from the region.
+                MNI Higher Secondary School, Sambhal, is built on the noble vision of our founder, Late Mr. Zaheer Ahmad Hashmi. He believed that education is a fundamental right that should be accessible to everyone.
+​His Mission & Philosophy
+​Inclusive Learning: His primary goal was to educate every child, regardless of their religion, background, or social status.
+​Affordable Excellence: He was dedicated to providing quality education at the lowest possible cost, ensuring that financial constraints never stand in the way of a child's future.
+
+                
+                "Education is the birthright of every child, and cost should never be the barrier that keeps a student from reaching their full potential." ~ Syed Zaheer Ahmad Hashmi
+
+                Today, we continue to honor his legacy by keeping his dream of "Education for All" alive and accessible.
               </p>
               <p className="text-foreground/80 leading-relaxed">
-                हमारा लक्ष्य प्रत्येक छात्र को शैक्षणिक उत्कृष्टता के साथ-साथ नैतिक मूल्यों और सामाजिक जिम्मेदारी की शिक्षा देना है।
+                संभल स्थित एमएनआई हायर सेकेंडरी स्कूल, हमारे संस्थापक स्वर्गीय श्री जहीर अहमद हाशमी के महान दृष्टिकोण पर आधारित है। उनका मानना था कि शिक्षा एक मौलिक अधिकार है जो सभी के लिए सुलभ होना चाहिए।
+उनका मिशन और दर्शन 
+समावेशी शिक्षा: उनका प्राथमिक लक्ष्य प्रत्येक बच्चे को शिक्षित करना था, चाहे उनका धर्म, पृष्ठभूमि या सामाजिक स्थिति कुछ भी हो।
+किफायती उत्कृष्टता: वे सभी बच्चों को उचित शिक्षा प्रदान करने के लिए समर्पित थे।
+किफायती उत्कृष्टता: वे न्यूनतम संभव लागत पर गुणवत्तापूर्ण शिक्षा प्रदान करने के लिए समर्पित थे, यह सुनिश्चित करते हुए कि वित्तीय बाधाएं कभी भी किसी बच्चे के भविष्य के रास्ते में न आएं।
+
+                "शिक्षा प्रत्येक बच्चे का जन्मसिद्ध अधिकार है, और लागत कभी भी वह बाधा नहीं बननी चाहिए जो किसी विद्यार्थी को अपनी पूर्ण क्षमता तक पहुँचने से रोके।" ~ सैयद ज़हीर अहमद हाशमी
+
+                आज हम "सभी के लिए शिक्षा" के उनके सपने को जीवित और सुलभ बनाए रखकर उनकी विरासत का सम्मान करना जारी रखते हैं।
+
+                
+                
               </p>
             </div>
             <div className="relative">
@@ -68,7 +85,7 @@ export default function About() {
                 <BookOpen className="w-24 h-24 text-primary/40" />
               </div>
               <div className="absolute -bottom-4 -right-4 bg-primary text-white rounded-xl p-4 shadow-lg">
-                <div className="text-2xl font-bold">30+</div>
+                <div className="text-2xl font-bold">10+</div>
                 <div className="text-xs">Years of Excellence</div>
               </div>
             </div>
