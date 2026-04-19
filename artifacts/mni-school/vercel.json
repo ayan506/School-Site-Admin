@@ -1,4 +1,7 @@
 {
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/server" },
     { "source": "/((?!api).*)", "destination": "/index.html" }
