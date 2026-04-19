@@ -1,0 +1,14 @@
+{
+  "buildCommand": "pnpm --filter @workspace/mni-school run build",
+  "outputDirectory": "artifacts/mni-school/dist",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/((?!api).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
+}
