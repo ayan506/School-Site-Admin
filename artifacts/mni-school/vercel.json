@@ -7,7 +7,7 @@
     { "source": "/((?!api).*)", "destination": "/index.html" }
   ],
   "functions": {
-    "api/server.ts": {
+    "api/server.js": {
       "memory": 1024,
       "maxDuration": 30
     }
